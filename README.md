@@ -22,12 +22,12 @@ gcc -Wall -Wextra -o senhas main.c
 
 - O teste de **Urgente vem primeiro**: uma mulher de 85 anos também seria preferencial, mas a categoria mais prioritária vence.
 - A numeração da senha é sequencial **por categoria** (N001, N002, ...).
-- Perguntas sobre gestante e lactante só são feitas quando o gênero é F.
+- As perguntas sobre gestante e lactante são feitas para todos os pacientes (1 = sim, 0 = não).
 
 ## Regras de chamada
 
 1. Urgentes antes de Preferenciais, e Preferenciais antes de Normais.
-2. Dentro de cada categoria vale a ordem de emissão (**FIFO**, fila circular).
+2. Dentro de cada categoria vale a ordem de emissão (**FIFO**, fila).
 3. Senha já atendida não volta para a fila.
 4. Só é possível chamar outra senha depois de finalizar a atual.
 5. Aceita vários cadastros durante a execução (até 100 por fila).
@@ -38,26 +38,21 @@ gcc -Wall -Wextra -o senhas main.c
 
 | Função | Responsabilidade |
 |---|---|
-| `cadastrarPaciente()` | Lê os dados, classifica, gera a senha e enfileira |
+| `cadastrar()` | Lê os dados, classifica, gera a senha e coloca na fila |
 | `classificar()` | Retorna `'U'`, `'P'` ou `'N'` |
-| `gerarSenha()` | Monta a senha sequencial (ex.: `P002`) |
-| `enfileirar()` / `desenfileirar()` | Operações da fila FIFO |
-| `proximaFila()` | Decide qual fila é chamada primeiro |
-| `consultarProxima()`, `chamarPaciente()`, `mostrarEmAtendimento()`, `finalizarAtendimento()` | Registro de atendimento |
-| `exibirPainel()` | Painel textual |
+| `proximaFila()` | Decide qual fila é chamada primeiro (U, depois P, depois N) |
+| `consultar()`, `chamar()`, `emAtendimento()`, `finalizar()` | Registro de atendimento |
+| `painel()` | Painel textual |
 
-Estruturas: `Paciente` (struct) e `Fila` (struct com vetor + índices início/fim/quantidade).
+Usa apenas `scanf`, `if/else`, `switch`, `for`, `do-while`, vetores e funções.
+
+Estrutura de dados: uma matriz `fila[3][MAX]` (uma fila por categoria) e dois vetores, `inicio` (quantos já foram chamados) e `fim` (quantos já foram emitidos). Emitir uma senha coloca o número no final da fila; chamar lê o número da posição `inicio` e avança `inicio`. Assim vale a ordem de chegada (FIFO) e a senha atendida nunca volta.
 
 ## Menu
 
 ```
-1 - Cadastrar paciente / emitir senha
-2 - Consultar proxima senha
-3 - Chamar paciente
-4 - Senha em atendimento
-5 - Finalizar atendimento
-6 - Painel de chamada
-0 - Sair
+1-Cadastrar  2-Proxima  3-Chamar  4-Em atendimento
+5-Finalizar  6-Painel   0-Sair
 ```
 
 ## Exemplo demonstrativo
@@ -67,8 +62,8 @@ Cadastros (nesta ordem): homem 30 anos → `N001`; mulher 28 gestante → `P001`
 Painel logo após os cadastros:
 
 ```
-Proximas      : U001 P001 P002 P003 N001
-Em espera     : Urgente=1 | Preferencial=3 | Normal=1
+Proximas: U001 P001 P002 P003 N001
+Em espera: Urgente=1 | Preferencial=3 | Normal=1
 ```
 
 Ordem de chamada resultante: **U001 → P001 → P002 → P003 → N001**.
@@ -76,9 +71,9 @@ Ordem de chamada resultante: **U001 → P001 → P002 → P003 → N001**.
 Após chamar e finalizar `U001` e chamar `P001`:
 
 ```
-Senha chamada : P001
-Proximas      : P002 P003 N001
-Em espera     : Urgente=0 | Preferencial=2 | Normal=1
+Senha chamada: P001
+Proximas: P002 P003 N001
+Em espera: Urgente=0 | Preferencial=2 | Normal=1
 ```
 
 A saída completa está em `exemplo_saida.txt`.
